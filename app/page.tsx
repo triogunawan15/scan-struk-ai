@@ -40,24 +40,33 @@ export default function Home() {
 
   async function sendOtp() {
     setError("");
-    const { error } = await supabase.auth.signInWithOtp({ email });
-    if (error) setError(error.message);
-    else setOtpSent(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ email });
+      if (error) setError(error.message || "Gagal mengirim kode. Coba lagi.");
+      else setOtpSent(true);
+    } catch (err) {
+      setError("Gagal terhubung ke server. Cek koneksi internet dan coba lagi.");
+    }
   }
 
   async function verifyOtp() {
     setError("");
     setVerifying(true);
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: otpCode,
-      type: "email",
-    });
-    setVerifying(false);
-    if (error) setError(error.message);
-    else {
-      setLoggedIn(true);
-      refreshUsage();
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token: otpCode,
+        type: "email",
+      });
+      if (error) setError(error.message || "Kode salah atau kedaluwarsa.");
+      else {
+        setLoggedIn(true);
+        refreshUsage();
+      }
+    } catch (err) {
+      setError("Gagal terhubung ke server. Cek koneksi internet dan coba lagi.");
+    } finally {
+      setVerifying(false);
     }
   }
 
