@@ -19,6 +19,8 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [loggedIn, setLoggedIn] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -41,6 +43,22 @@ export default function Home() {
     const { error } = await supabase.auth.signInWithOtp({ email });
     if (error) setError(error.message);
     else setOtpSent(true);
+  }
+
+  async function verifyOtp() {
+    setError("");
+    setVerifying(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: otpCode,
+      type: "email",
+    });
+    setVerifying(false);
+    if (error) setError(error.message);
+    else {
+      setLoggedIn(true);
+      refreshUsage();
+    }
   }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -103,13 +121,31 @@ export default function Home() {
                 onChange={(e) => setEmail(e.target.value)}
               />
               <button onClick={sendOtp} className="w-full bg-indigo-600 text-white rounded-lg p-3 font-medium">
-                Kirim Link Login
+                Kirim Kode Login
               </button>
             </>
           ) : (
-            <p className="text-sm text-gray-600">
-              Link login sudah dikirim ke {email}. Buka email kamu dan klik link-nya untuk masuk.
-            </p>
+            <>
+              <p className="text-sm text-gray-600">
+                Kode 6 digit sudah dikirim ke {email}. Buka email kamu, cari kodenya, lalu masukkan di bawah ini.
+              </p>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Masukkan kode 6 digit"
+                className="w-full border rounded-lg p-3 tracking-widest text-center text-lg"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value)}
+                maxLength={6}
+              />
+              <button
+                onClick={verifyOtp}
+                disabled={verifying}
+                className="w-full bg-indigo-600 text-white rounded-lg p-3 font-medium disabled:opacity-50"
+              >
+                {verifying ? "Memverifikasi..." : "Masuk"}
+              </button>
+            </>
           )}
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
